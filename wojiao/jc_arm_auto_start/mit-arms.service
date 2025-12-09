@@ -1,0 +1,14 @@
+[Unit]
+Description=MIT Arms Startup Service
+After=multi-user.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=/home/jc/asser
+ExecStart=/home/jc/asser/start_arms.sh
+Restart=on-failure
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
