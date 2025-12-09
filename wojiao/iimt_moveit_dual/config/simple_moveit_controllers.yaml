@@ -1,0 +1,39 @@
+controller_list:
+  - name: right_arm_controller
+    action_ns: follow_joint_trajectory
+    type: FollowJointTrajectory
+    default: True
+    joints:
+      - Joint_ul_r_shoulder_pitch
+      - Joint_ul_r_shoulder_roll
+      - Joint_ul_r_shoulder_yaw
+      - Joint_ul_r_elbow_pitch
+      - Joint_ul_r_wrist_yaw
+      - Joint_ul_r_wrist_pitch
+  - name: left_arm_controller
+    action_ns: follow_joint_trajectory
+    type: FollowJointTrajectory
+    default: True
+    joints:
+      - Joint_ul_l_shoulder_pitch
+      - Joint_ul_l_shoulder_roll
+      - Joint_ul_l_shoulder_yaw
+      - Joint_ul_l_elbow_pitch
+      - Joint_ul_l_wrist_yaw
+      - Joint_ul_l_wrist_pitch
+  - name: head_controller
+    action_ns: follow_joint_trajectory
+    type: FollowJointTrajectory
+    default: True
+    joints:
+      - Joint_Neck_Pitch_1
+      - Joint_Neck_Yaw_1
+  - name: torso_controller
+    action_ns: follow_joint_trajectory
+    type: FollowJointTrajectory
+    default: True
+    joints:
+      - Joint_DownLimb_Pitch_1
+      - Joint_DownLimb_Pitch_2
+      - Joint_DownLimb_Pitch_3
+      - Joint_DownLimb_Yaw_1

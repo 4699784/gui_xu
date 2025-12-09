@@ -1,0 +1,11 @@
+moveit_setup_assistant_config:
+  URDF:
+    package: a1_description
+    relative_path: urdf/a1_description.urdf.xacro
+    xacro_args: ""
+  SRDF:
+    relative_path: config/a1_description.srdf
+  CONFIG:
+    author_name: "xander: xander_1@163.com; yisu"
+    author_email: yisu.fang@outlook.com
+    generated_timestamp: 1762395757

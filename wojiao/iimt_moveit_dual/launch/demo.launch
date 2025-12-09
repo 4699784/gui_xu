@@ -1,0 +1,98 @@
+<launch>
+
+  <!-- ===== Legacy-compatible args (unchanged) ===== -->
+  <arg name="use_rviz" default="true"/>
+  <arg name="load_robot_description" default="true"/>
+  <arg name="moveit_controller_manager" default="ros_control"/> <!-- legacy default -->
+
+  <!-- Optional: flip to Simple Controller Manager without breaking legacy -->
+  <arg name="use_simple_manager" default="false"/>
+
+
+  <!-- ===== Robot description / SRDF / MoveIt configs (unchanged) ===== -->
+  <param name="robot_description"
+         command="$(find xacro)/xacro --inorder '$(find a1_description)/urdf/a1_description.urdf.xacro'"/>
+  <param name="robot_description_semantic"
+         textfile="$(find iimt_moveit_dual)/config/a1_description.srdf"/>
+
+  <rosparam command="load" file="$(find iimt_moveit_dual)/config/kinematics.yaml"/>
+  <rosparam command="load" file="$(find iimt_moveit_dual)/config/ompl_planning.yaml"/>
+  <!-- <rosparam command="load" file="$(find iimt_moveit_dual)/config/joint_limits.yaml"/> -->
+
+  <!-- ===== Force OMPL pipeline (legacy style puts params in ns=move_group) ===== -->
+  <group ns="move_group">
+    <param name="planning_plugin" value="ompl_interface/OMPLPlanner"/>
+    <rosparam param="planning_pipelines">[ompl]</rosparam>
+    <param name="default_planning_pipeline" value="ompl"/>
+
+    <!-- If you stay on ros_control (legacy default), load your legacy controllers.yaml as-is -->
+    <group unless="$(arg use_simple_manager)">
+      <!-- Your file should be in legacy format (top-level "controller_list: [...]") -->
+      <rosparam command="load" file="$(find iimt_moveit_dual)/config/controllers.yaml"/>
+    </group>
+
+    <!-- If you opt-in to Simple manager, inject the array directly as /move_group/controller_list -->
+    <group if="$(arg use_simple_manager)">
+      <rosparam param="controller_list">
+        - name: right_arm_controller
+          type: FollowJointTrajectory
+          action_ns: follow_joint_trajectory
+          <!-- action_ns:right_arm/follow_joint_trajectory -->
+          joints: [Joint_ul_r_shoulder_pitch, Joint_ul_r_shoulder_roll, Joint_ul_r_shoulder_yaw,
+                   Joint_ul_r_elbow_pitch, Joint_ul_r_wrist_yaw, Joint_ul_r_wrist_pitch]
+        - name: left_arm_controller
+          type: FollowJointTrajectory
+          action_ns: follow_joint_trajectory
+          <!-- action_ns:lift_arm/follow_joint_trajectory -->
+          joints: [Joint_ul_l_shoulder_pitch, Joint_ul_l_shoulder_roll, Joint_ul_l_shoulder_yaw,
+                   Joint_ul_l_elbow_pitch, Joint_ul_l_wrist_yaw, Joint_ul_l_wrist_pitch]
+      </rosparam>
+    </group>
+  </group>
+
+  <!-- ===== Start MoveIt exactly like legacy (keeps external compatibility) ===== -->
+  <include file="$(find iimt_moveit_dual)/launch/move_group.launch">
+    <arg name="allow_trajectory_execution" value="true"/>
+    <!-- If use_simple_manager=true, override the manager to Simple; else keep legacy arg -->
+    <arg name="moveit_controller_manager"
+         value="$(eval 'moveit_simple_controller_manager/MoveItSimpleControllerManager' if arg('use_simple_manager')=='true' else arg('moveit_controller_manager'))"/>
+    <arg name="load_robot_description" value="$(arg load_robot_description)"/>
+  </include>
+
+  <!-- ===== Robot State Publisher (unchanged) ===== -->
+  <!-- <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher">
+    <param name="robot_description"
+           command="xacro $(find a1_description)/urdf/a1_description.urdf.xacro"/>
+  </node> -->
+
+  <!-- ===== Static TFs so r_arm_root/l_arm_root resolve (safe no-ops if unused) ===== 
+  <node pkg="tf2_ros" type="static_transform_publisher" name="tf_right_root"
+        args="0 0 0 0 0 0 dummy_link r_arm_root"/>
+  <node pkg="tf2_ros" type="static_transform_publisher" name="tf_left_root"
+        args="0 0 0 0 0 0 dummy_link l_arm_root"/>-->
+
+  <!-- ===== Dual bridge node (right legacy path + mirrored left) =====
+       This node exposes:
+         /right_arm_controller/follow_joint_trajectory
+         /left_arm_controller/follow_joint_trajectory
+       It keeps absolute behavior for the right arm (same action name, pacing, +[0.05]).
+  -->
+   <!-- <node pkg="iimt"
+        type="inspire_hand_node.py"
+        name="inspire_hand_node"
+        output="screen" />-->
+
+  <node name="moveit_to_real_robot" pkg="iimt_moveit_dual" type="moveit_to_real_robot.py" output="screen">
+    <!-- Global knobs preserved (apply to both arms) -->
+    <param name="append_tail" value="true"/>
+    <param name="tail_value" value="0.05"/>
+    <param name="enforce_timing" value="true"/>
+  </node>
+  <!-- ===== RViz (unchanged) ===== -->
+  <include file="$(find iimt_moveit_dual)/launch/moveit_rviz.launch" if="$(arg use_rviz)">
+    <arg name="rviz_config" value="$(find iimt_moveit_dual)/launch/moveit.rviz"/>
+  </include>
+
+
+</launch>
+

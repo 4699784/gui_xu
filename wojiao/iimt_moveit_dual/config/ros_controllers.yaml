@@ -1,0 +1,18 @@
+controller_list:
+  - name: ""
+    action_ns: execute_trajectory
+    type: FollowJointTrajectory
+    default: true
+    joints:
+      - Joint_ul_l_shoulder_pitch
+      - Joint_ul_l_shoulder_roll
+      - Joint_ul_l_shoulder_yaw
+      - Joint_ul_l_elbow_pitch
+      - Joint_ul_l_wrist_yaw
+      - Joint_ul_l_wrist_pitch
+      - Joint_ul_r_shoulder_pitch
+      - Joint_ul_r_shoulder_roll
+      - Joint_ul_r_shoulder_yaw
+      - Joint_ul_r_elbow_pitch
+      - Joint_ul_r_wrist_yaw
+      - Joint_ul_r_wrist_pitch
