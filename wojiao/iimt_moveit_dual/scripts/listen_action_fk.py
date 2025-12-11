@@ -2,12 +2,11 @@
 
 import rospy
 import actionlib
-from moveit_msgs.msg import ExecuteTrajectoryAction
+from moveit_msgs.msg import ExecuteTrajectoryAction,ExecuteTrajectoryGoal,ExecuteTrajectoryActionGoal
 from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
 from control_msgs.msg import FollowJointTrajectoryAction, FollowJointTrajectoryGoal
 import moveit_commander
 from moveit_msgs.srv import GetPositionFK, GetPositionFKRequest
-
 
 class TrajectoryListener:
     def __init__(self):
@@ -27,6 +26,7 @@ class TrajectoryListener:
             "Joint_ul_r_wrist_yaw",
             "Joint_ul_r_wrist_pitch"
         ]
+        self.all_joint_names = self.left_joint_names + self.right_joint_names
 
         # Action clients for real robot controllers
         self.left_client = actionlib.SimpleActionClient(
@@ -50,6 +50,7 @@ class TrajectoryListener:
         )
         self.server.start()
         rospy.loginfo("Trajectory listener started. Waiting for MoveIt! trajectories...")
+        self.goal_pub = rospy.Publisher('/recorded_moveit_trajectory',JointTrajectory,queue_size=10)
 
         # MoveIt! interfaces
         self.left_move_group = moveit_commander.MoveGroupCommander("left_arm")
@@ -105,6 +106,8 @@ class TrajectoryListener:
     def execute_cb(self, goal):
         traj = goal.trajectory.joint_trajectory
 
+        self.goal_pub.publish(traj)
+        
         left_traj = JointTrajectory()
         left_traj.joint_names = self.left_joint_names
         left_traj.header = traj.header
@@ -156,7 +159,28 @@ class TrajectoryListener:
         self.server.set_succeeded()
         rospy.loginfo("Trajectory execution completed.")
 
+
+
 if __name__ == '__main__':
     rospy.init_node('trajectory_listener', anonymous=True)
     listener = TrajectoryListener()
     rospy.spin()
+
+'''
+#[INFO] [1765437451.778048]: Left EE pose:
+  position: x: -0.26467314436804507
+y: -0.44280720504844195
+z: -0.19065174648128067
+  orientation: x: -0.2903821540331724
+y: -0.6620691611892915
+z: 0.47643947304053885
+w: 0.5003479378892429
+[INFO] [1765437451.781682]: Right EE pose:
+  position: x: 0.2244709911787207
+y: -0.20788259829684919
+z: 0.7538348721129164
+  orientation: x: -0.6949340250214676
+y: -0.6577141874692004
+z: -0.16831750520250927
+w: 0.23695562013085034
+'''

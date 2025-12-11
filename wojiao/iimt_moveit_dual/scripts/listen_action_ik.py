@@ -91,18 +91,20 @@ class TrajectoryListener:
         self.left_arm.set_pose_target(target_pose)
         
         # 规划并执行
-        plan = self.left_arm.plan()
-        if len(plan.joint_trajectory.points) > 0:
-            success = self.left_arm.execute(plan, wait=True)
+        success, plan_trajectory, planning_time, error_code = self.left_arm.plan()
+        if success and len(plan_trajectory.joint_trajectory.points) > 0:
+            rospy.loginfo("Planning succeeded, executing...")
+            exec_success = self.left_arm.execute(plan_trajectory, wait=True)
             self.left_arm.stop()
             self.left_arm.clear_pose_targets()
             
-            if success:
+            if exec_success:
                 rospy.loginfo("Successfully moved to target position")
             else:
                 rospy.logerr("Failed to execute trajectory")
         else:
-            rospy.logerr("Failed to plan trajectory to target position")
+            rospy.logerr("Failed to plan trajectory to target position (success=%s, points=%d)",
+                        success, len(plan_trajectory.joint_trajectory.points) if success else 0)
 
     #tarjectory execute
     def execute_cb(self, goal):

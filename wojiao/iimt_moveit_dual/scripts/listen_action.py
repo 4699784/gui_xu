@@ -2,12 +2,10 @@
 
 import rospy
 import actionlib
-from moveit_msgs.msg import ExecuteTrajectoryAction, ExecuteTrajectoryGoal
-from trajectory_msgs.msg import JointTrajectoryPoint
+from moveit_msgs.msg import ExecuteTrajectoryAction, ExecuteTrajectoryGoal,ExecuteTrajectoryActionGoal
+from trajectory_msgs.msg import JointTrajectoryPoint,JointTrajectory
 from control_msgs.msg import FollowJointTrajectoryAction, FollowJointTrajectoryGoal
-from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
-from robot_control import HeadController,LeftHandController
-from moveit_msgs.msg import ExecuteTrajectoryActionGoal
+#from robot_control import HeadController,LeftHandController
 
 class TrajectoryListener:
     def __init__(self):
