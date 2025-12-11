@@ -35,7 +35,7 @@ class TrajectoryListener:
             
             self.left_arm.set_planning_time(10.0)
             self.right_arm.set_planning_time(10.0)
-            self.left_arm.set_goal_position_tolerance(0.01)
+            self.left_arm.set_goal_position_tolerance(0.5)
             self.right_arm.set_goal_position_tolerance(0.01)
             
         except Exception as e:
@@ -54,15 +54,6 @@ class TrajectoryListener:
         self.left_client.wait_for_server()
         self.right_client.wait_for_server()
         rospy.loginfo("Connected to left/right arm action servers.")
-
-        # Action Server
-        self.server = actionlib.SimpleActionServer(
-            "/execute_trajectory",
-            ExecuteTrajectoryAction,
-            execute_cb=self.execute_cb,
-            auto_start=False
-        )
-        self.server.start()
         
         # subscribe position and move to target position
         self.position_sub = rospy.Subscriber('/target_position', Point, self.move_to_position_callback)
@@ -80,72 +71,52 @@ class TrajectoryListener:
         # 获取当前方向，保持方向不变
         current_pose = self.left_arm.get_current_pose().pose
         
-        # 创建目标位姿
-        target_pose = Pose()
-        target_pose.position.x = point_msg.x
-        target_pose.position.y = point_msg.y
-        target_pose.position.z = point_msg.z
-        target_pose.orientation = current_pose.orientation  # 保持当前方向
-        
         # 设置目标位姿
-        self.left_arm.set_pose_target(target_pose)
+        self.left_arm.set_position_target([point_msg.x, point_msg.y, point_msg.z])
         
         # 规划并执行
+        #规划的元组
         success, plan_trajectory, planning_time, error_code = self.left_arm.plan()
-        if success and len(plan_trajectory.joint_trajectory.points) > 0:
-            rospy.loginfo("Planning succeeded, executing...")
-            exec_success = self.left_arm.execute(plan_trajectory, wait=True)
-            self.left_arm.stop()
-            self.left_arm.clear_pose_targets()
-            
-            if exec_success:
-                rospy.loginfo("Successfully moved to target position")
-            else:
-                rospy.logerr("Failed to execute trajectory")
+        # plan = self.left_arm.plan()
+        if success:
+            rospy.loginfo("Planning succeeded")
+            self.execute_cb_left(plan_trajectory)
         else:
-            rospy.logerr("Failed to plan trajectory to target position (success=%s, points=%d)",
-                        success, len(plan_trajectory.joint_trajectory.points) if success else 0)
+            rospy.logwarn("Planning failed or returned empty trajectory")
+
+        # if success and len(plan_trajectory.joint_trajectory.points) > 0:
+        #     rospy.loginfo("Planning succeeded, executing...")
+        #     exec_success = self.left_arm.execute(plan_trajectory, wait=True)
+        #     self.left_arm.stop()
+        #     self.left_arm.clear_pose_targets()
+            
+        #     if exec_success:
+        #         rospy.loginfo("Successfully moved to target position")
+        #     else:
+        #         rospy.logerr("Failed to execute trajectory")
+        # else:
+        #     rospy.logerr("Failed to plan trajectory to target position (success=%s, points=%d)",
+        #                 success, len(plan_trajectory.joint_trajectory.points) if success else 0)
 
     #tarjectory execute
-    def execute_cb(self, goal):
+    def execute_cb_left(self, goal):
         traj = goal.trajectory.joint_trajectory
 
-        # 分离左右臂轨迹
+        # 创建左臂轨迹（直接复用，无需拆分）
         left_traj = JointTrajectory()
         left_traj.joint_names = self.left_joint_names
         left_traj.header = traj.header
+        left_traj.points = traj.points  # 直接赋值所有点
 
-        right_traj = JointTrajectory()
-        right_traj.joint_names = self.right_joint_names
-        right_traj.header = traj.header
-
-        for pt in traj.points:
-            left_pt = JointTrajectoryPoint()
-            left_pt.positions = pt.positions[:6]
-            left_pt.velocities = pt.velocities[:6] if pt.velocities else []
-            left_pt.accelerations = pt.accelerations[:6] if pt.accelerations else []
-            left_pt.time_from_start = pt.time_from_start
-            left_traj.points.append(left_pt)
-
-            right_pt = JointTrajectoryPoint()
-            right_pt.positions = pt.positions[6:]
-            right_pt.velocities = pt.velocities[6:] if pt.velocities else []
-            right_pt.accelerations = pt.accelerations[6:] if pt.accelerations else []
-            right_pt.time_from_start = pt.time_from_start
-            right_traj.points.append(right_pt)
-
+        # 构造 Action Goal
         left_goal = FollowJointTrajectoryGoal(trajectory=left_traj)
-        right_goal = FollowJointTrajectoryGoal(trajectory=right_traj)
 
+        # 发送目标并等待结果
         self.left_client.send_goal(left_goal)
-        self.right_client.send_goal(right_goal)
-        
-        # 等待执行完成
-        left_done = self.left_client.wait_for_result(rospy.Duration(10.0)) 
-        right_done = self.right_client.wait_for_result(rospy.Duration(10.0))
-
-        self.server.set_succeeded()
-        rospy.loginfo("Trajectory processing completed.")
+        if self.left_client.wait_for_result(rospy.Duration(10.0)):
+            rospy.loginfo("Left arm trajectory execution completed.")
+        else:
+            rospy.logerr("Left arm execution timed out!")
 
 if __name__ == '__main__':
     rospy.init_node('trajectory_listener', anonymous=True)
