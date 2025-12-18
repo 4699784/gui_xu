@@ -46,7 +46,9 @@ class TorsoAction:
 
             # build positions in canonical order
             psrc = pt.positions if pt.positions else [0.0]*len(goal.trajectory.joint_names)
-            cmd = [float(psrc[idx[j]]) for j in JOINTS]
+            # cmd = [float(psrc[idx[j]]) for j in JOINTS]
+            joint_vals = [float(psrc[idx[j]]) for j in JOINTS]  # 4 values
+            cmd = joint_vals + [0.0, 0.0]  # now 6 values
             try:
                 self.cli.send_request(TorsoCmdMsg(cmd='servoj', data=cmd))
             except Exception as e:

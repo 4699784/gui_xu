@@ -84,23 +84,9 @@ class TrajectoryListener:
         else:
             rospy.logwarn("Planning failed or returned empty trajectory")
 
-        # if success and len(plan_trajectory.joint_trajectory.points) > 0:
-        #     rospy.loginfo("Planning succeeded, executing...")
-        #     exec_success = self.left_arm.execute(plan_trajectory, wait=True)
-        #     self.left_arm.stop()
-        #     self.left_arm.clear_pose_targets()
-            
-        #     if exec_success:
-        #         rospy.loginfo("Successfully moved to target position")
-        #     else:
-        #         rospy.logerr("Failed to execute trajectory")
-        # else:
-        #     rospy.logerr("Failed to plan trajectory to target position (success=%s, points=%d)",
-        #                 success, len(plan_trajectory.joint_trajectory.points) if success else 0)
-
     #tarjectory execute
     def execute_cb_left(self, goal):
-        traj = goal.trajectory.joint_trajectory
+        traj = goal.joint_trajectory
 
         # 创建左臂轨迹（直接复用，无需拆分）
         left_traj = JointTrajectory()

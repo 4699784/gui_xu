@@ -52,4 +52,6 @@ initial:  # Define initial robot poses per group
   - group: head
     pose: home
   - group: torso
-    pose: laid_back
+    pose: stood_up
+
+#    pose: laid_back

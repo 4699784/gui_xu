@@ -50,10 +50,6 @@
     </group>
   </group>
 
-   <!-- ===== Force initial pose to 'stood_up' for torso =====
-  <rosparam param="move_group/initial_pose_name" type="str">stood_up</rosparam>
-  <rosparam param="move_group/initial_group_name" type="str">torso</rosparam> -->
-
   <!-- ===== Start MoveIt exactly like legacy (keeps external compatibility) ===== -->
   <include file="$(find iimt_moveit_dual)/launch/move_group.launch">
     <arg name="allow_trajectory_execution" value="true"/>
