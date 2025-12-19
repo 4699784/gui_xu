@@ -44,3 +44,16 @@ def send_dual_hand(left_data=None, right_data=None):
     if right_data is not None:
         success &= send_right_hand(right_data)
     return success
+
+if __name__ == '__main__':
+
+    left_grasp  = [1000, 1000, 1000, 993, 1, 113]   # 左手握蜂蜜水
+    right_grasp = [1000, 1000, 500, 500, 1000, 0]   # 右手握
+    reset_hand   = [1000, 1000, 1000, 1000, 1000, 0]  #复位
+
+    #left
+    #send_left_hand(left_grasp)
+
+    send_right_hand(right_grasp)
+    send_left_hand(reset_hand)
+    #send_left_hand(left_grasp)

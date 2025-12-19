@@ -29,8 +29,24 @@ class ArmReader:
         return [float(v) for v in data[:6]] if data else [0.0] * 6
 
 
+# class TorsoReader:
+#     """读取腰部 4-DOF：Pitch1, Pitch2, Pitch3, Yaw"""
+#     def __init__(self, port: int = 5600):
+#         self.client = ZMQClient(f"tcp://192.168.8.201:{port}")
+#         self.joint_names = [
+#             "Joint_DownLimb_Pitch_1",
+#             "Joint_DownLimb_Pitch_2",
+#             "Joint_DownLimb_Pitch_3",
+#             "Joint_DownLimb_Yaw_1",
+#         ]
+#         self.client.send_request(TorsoCmdMsg(cmd='init'))
+
+#     def get_pos(self):
+#         data = self.client.send_request(TorsoCmdMsg(cmd='get_pos'))
+#         return [float(v) for v in data[:4]] if data else [0.0] * 4
+
+##绕开硬件的torso初始位置的校准
 class TorsoReader:
-    """读取腰部 4-DOF：Pitch1, Pitch2, Pitch3, Yaw"""
     def __init__(self, port: int = 5600):
         self.client = ZMQClient(f"tcp://192.168.8.201:{port}")
         self.joint_names = [
@@ -40,11 +56,10 @@ class TorsoReader:
             "Joint_DownLimb_Yaw_1",
         ]
         self.client.send_request(TorsoCmdMsg(cmd='init'))
-
+        rospy.logwarn("TorsoReader: FORCING 'stood_up' pose for all reads!")
     def get_pos(self):
-        data = self.client.send_request(TorsoCmdMsg(cmd='get_pos'))
-        return [float(v) for v in data[:4]] if data else [0.0] * 4
-    
+        #完全站立
+        return [-1.2404, 2.0226, -0.704, 0.0]
 
 class HeadReader:
     """读取头部 2-DOF：Pitch,  Yaw"""

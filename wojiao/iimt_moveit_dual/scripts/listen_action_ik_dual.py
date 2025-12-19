@@ -34,8 +34,8 @@ class TrajectoryListener:
             
             self.left_arm.set_planning_time(10.0)
             self.right_arm.set_planning_time(10.0)
-            self.left_arm.set_goal_position_tolerance(0.01)
-            self.right_arm.set_goal_position_tolerance(0.01)
+            self.left_arm.set_goal_position_tolerance(0.02)
+            self.right_arm.set_goal_position_tolerance(0.02)
             
         except Exception as e:
             rospy.logerr(f"Failed to initialize MoveGroupCommander: {e}")
@@ -76,7 +76,6 @@ class TrajectoryListener:
         else:
             rospy.logwarn("[Left] Planning failed!")
 
-
     def move_to_right_position_callback(self, point_msg):
         rospy.loginfo(f"[Right] Received target position: ({point_msg.x:.3f}, {point_msg.y:.3f}, {point_msg.z:.3f})")
         if self.right_arm is None:
@@ -90,7 +89,6 @@ class TrajectoryListener:
             self.execute_cb_right(plan)
         else:
             rospy.logwarn("[Right] Planning failed!")
-
 
     def execute_cb_left(self, plan):
         traj = plan.joint_trajectory
@@ -126,3 +124,8 @@ if __name__ == '__main__':
     rospy.init_node('trajectory_listener', anonymous=True)
     listener = TrajectoryListener()
     rospy.spin()
+
+
+#  position: x: 0.18554691241174123
+# y: 0.6508358316846692
+# z: 1.0292827070371384
