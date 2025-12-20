@@ -47,8 +47,10 @@ def left_publish_target_and_reset(x, y, z, wait_duration=10):
 if __name__ == '__main__':
     try:
         #right_publish_target_and_reset(x=0.185, y=0.65, z=1.02, wait_duration=10)
-        left_publish_target_and_reset(x=-0.23, y=-0.42, z=0.88, wait_duration=10)
-
+        
+        #test
+        right_publish_target_and_reset(x=0.17418035221953315, y=0.5583811855541566, z=0.7702718536349595, wait_duration=20)
+        #left_publish_target_and_reset(x=-0.20416027956997784, y=0.4984886802889051, z=0.6795714053068135, wait_duration=20)
 
         # 你也可以多次调用不同位置（取消注释即可）：
         # publish_target_and_reset(0.2, 0.5, 0.95, wait_duration=5)
@@ -60,3 +62,25 @@ if __name__ == '__main__':
 
     except rospy.ROSInterruptException:
         pass
+
+
+#test_left
+#Left EE pose:
+# position: x: -0.20416027956997784
+# y: 0.4984886802889051
+# z: 0.6795714053068135
+#   orientation: x: -0.2207094379210395
+# y: -0.766471147711345
+# z: 0.3390662159838744
+# w: 0.4988420841478891
+
+#test_right
+# [INFO] [1766211795.953588]: Right EE pose:
+#   position: x: 0.17418035221953315
+# y: 0.5583811855541566
+# z: 0.7702718536349595
+#   orientation: x: 0.6583512290228323
+# y: 0.6586083874700932
+# z: -0.2573860849786028
+# w: 0.2579942915212624
+

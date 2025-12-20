@@ -118,9 +118,16 @@ class TrajectoryListener:
 
         for pt in traj.points:
             left_pt = JointTrajectoryPoint()
-            left_pt.positions = pt.positions[:6]
-            left_pt.velocities = pt.velocities[:6] if pt.velocities else []
-            left_pt.accelerations = pt.accelerations[:6] if pt.accelerations else []
+            # left_pt.positions = pt.positions[:6]
+            # left_pt.velocities = pt.velocities[:6] if pt.velocities else []
+            # left_pt.accelerations = pt.accelerations[:6] if pt.accelerations else []
+            #原始的轨迹
+            original_left_positions = pt.positions[:6]
+            # 在分割轨迹后，对 left_pt.positions 取反
+            inverted_left_positions = [-p for p in pt.positions[:6]]
+            left_pt.positions = inverted_left_positions
+            left_pt.velocities = [-v for v in pt.velocities[:6]] if pt.velocities else []
+            left_pt.accelerations = [-a for a in pt.accelerations[:6]] if pt.accelerations else []
             left_pt.time_from_start = pt.time_from_start
             left_traj.points.append(left_pt)
 
@@ -131,8 +138,10 @@ class TrajectoryListener:
             right_pt.time_from_start = pt.time_from_start
             right_traj.points.append(right_pt)
 
+            last_original_left = original_left_positions
+
         # Compute FK for the last point (optional: you can loop over all points if needed)
-        left_pose = self.compute_fk(left_pt.positions, is_left=True)
+        left_pose = self.compute_fk(last_original_left, is_left=True)
         right_pose = self.compute_fk(right_pt.positions, is_left=False)
 
         if left_pose and right_pose:

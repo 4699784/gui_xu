@@ -60,7 +60,6 @@ class TrajectoryListener:
         
         rospy.loginfo("Trajectory listener started. Waiting for target positions...")
 
-    
     def move_to_position_callback(self, point_msg):
         rospy.loginfo(f"Received target position: ({point_msg.x}, {point_msg.y}, {point_msg.z})")
         
@@ -83,7 +82,6 @@ class TrajectoryListener:
             self.execute_cb_left(plan_trajectory)
         else:
             rospy.logwarn("Planning failed or returned empty trajectory")
-
     #tarjectory execute
     def execute_cb_left(self, goal):
         traj = goal.joint_trajectory
