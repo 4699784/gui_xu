@@ -56,6 +56,10 @@ class TrajectoryListener:
         self.left_move_group = moveit_commander.MoveGroupCommander("left_arm")
         self.right_move_group = moveit_commander.MoveGroupCommander("right_arm")
 
+        #打印 planning frame
+        # rospy.loginfo("Left planning frame: %s", self.left_move_group.get_planning_frame())
+        # rospy.loginfo("Right planning frame: %s", self.right_move_group.get_planning_frame())
+
         # FK service client
         try:
             rospy.wait_for_service('/compute_fk', timeout=10.0)
@@ -208,4 +212,7 @@ z: -0.13332274184987458
 
 
 '''
+
+# [INFO] [1766455230.199195]: Left planning frame: dummy_link
+# [INFO] [1766455230.202262]: Right planning frame: dummy_link
 

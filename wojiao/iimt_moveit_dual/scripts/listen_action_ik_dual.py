@@ -6,6 +6,13 @@ from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
 from control_msgs.msg import FollowJointTrajectoryAction, FollowJointTrajectoryGoal
 from geometry_msgs.msg import Point,Pose
 from tf.transformations import quaternion_from_euler
+from std_msgs.msg import Bool
+from hand_control import send_left_hand,send_right_hand
+from reset_arms import reset_arms
+
+################################################
+##待完善的点：时序问题，阻塞问题
+################################################
 
 class TrajectoryListener:
     def __init__(self):
@@ -36,7 +43,7 @@ class TrajectoryListener:
             
             self.left_arm.set_planning_time(10.0)
             self.right_arm.set_planning_time(10.0)
-            self.left_arm.set_goal_position_tolerance(1.05)
+            self.left_arm.set_goal_position_tolerance(0.02)
             self.right_arm.set_goal_position_tolerance(0.02)
             
         except Exception as e:
@@ -58,94 +65,61 @@ class TrajectoryListener:
         rospy.loginfo("Connected to left/right arm action servers.")
 
         # Subscribers for left and right targets
-        self.left_sub = rospy.Subscriber('/left/target_position', Point, self.move_to_left_position_callback)
-        self.right_sub = rospy.Subscriber('/right/target_position', Point, self.move_to_right_position_callback)
+        self.left_sub = rospy.Subscriber('/left/target_pose', Pose, self.move_to_left_pose_callback)
+        self.right_sub = rospy.Subscriber('/right/target_pose', Pose, self.move_to_right_pose_callback)
 
-        rospy.loginfo("Trajectory listener started. Waiting for /left/target_position and /right/target_position ...")
-    def move_to_left_position_callback(self, point_msg):
-        rospy.loginfo(f"[Left] Received target position: ({point_msg.x:.3f}, {point_msg.y:.3f}, {point_msg.z:.3f})")
+        #手臂时序发布者
+        self.left_done_pub = rospy.Publisher('/left/arm_done', Bool, queue_size=1)
+        self.right_done_pub = rospy.Publisher('/right/arm_done', Bool, queue_size=1)
+
+        rospy.loginfo("Trajectory listener started. Waiting for /left/target_pose and /right/target_pose ...")
+    def move_to_left_pose_callback(self, pose_msg):
+        rospy.loginfo(f"[Left] Received target pose: "
+                    f"pos=({pose_msg.position.x:.3f}, {pose_msg.position.y:.3f}, {pose_msg.position.z:.3f}), "
+                    f"ori=({pose_msg.orientation.x:.3f}, {pose_msg.orientation.y:.3f}, "
+                    f"{pose_msg.orientation.z:.3f}, {pose_msg.orientation.w:.3f})")
+        
         if self.left_arm is None:
             rospy.logerr("Left MoveGroup not initialized!")
             return
 
-        #self.left_arm.set_position_target([point_msg.x, point_msg.y, point_msg.z])
-        # success, plan, _, _ = self.left_arm.plan()
-        # if success:
-        #     rospy.loginfo("[Left] Planning succeeded, executing...")
-        #     self.execute_cb_left(plan)
-        # else:
-        #     rospy.logwarn("[Left] Planning failed!")
-
-        target_pose = Pose()
-        target_pose.position.x = point_msg.x
-        target_pose.position.y = point_msg.y
-        target_pose.position.z = point_msg.z
-
-        # #朝向设置
-        # qx, qy, qz, qw = quaternion_from_euler(*self.default_euler)
-        # target_pose.orientation.x = qx
-        # target_pose.orientation.y = qy
-        # target_pose.orientation.z = qz
-        # target_pose.orientation.w = qw
-        
-        #自定义朝向
-        target_pose.orientation.x = -0.2207094379210395
-        target_pose.orientation.y = -0.766471147711345
-        target_pose.orientation.z = 0.3390662159838744
-        target_pose.orientation.w = 0.4988420841478891
-        
-        waypoints = [target_pose]
+        # 直接使用接收到的 pose_msg（包含位置和朝向）
+        waypoints = [pose_msg]  # 注意：这里已经是 Pose 类型
         (plan, fraction) = self.left_arm.compute_cartesian_path(
             waypoints,
-            0.05,        # 每步 1cm
-            False   # 禁用关节跳跃（强制平滑）
+            0.01,   # 步长（米）
+            False   # 不允许跳跃
         )
 
         if fraction > 0.95:
             rospy.loginfo("[Left] Cartesian path planned successfully.")
-            #self.execute_cb_left(plan)
+            self.execute_cb_left(plan)  # 如果要执行就取消注释
         else:
             rospy.logwarn(f"[Left] Cartesian path only {fraction*100:.1f}% planned!")
-    def move_to_right_position_callback(self, point_msg):
-        rospy.loginfo(f"[Right] Received target position: ({point_msg.x:.3f}, {point_msg.y:.3f}, {point_msg.z:.3f})")
+    def move_to_right_pose_callback(self, pose_msg):
+        rospy.loginfo(f"[Right] Received target pose: "
+                    f"pos=({pose_msg.position.x:.3f}, {pose_msg.position.y:.3f}, {pose_msg.position.z:.3f}), "
+                    f"ori=({pose_msg.orientation.x:.3f}, {pose_msg.orientation.y:.3f}, "
+                    f"{pose_msg.orientation.z:.3f}, {pose_msg.orientation.w:.3f})")
+        
         if self.right_arm is None:
             rospy.logerr("Right MoveGroup not initialized!")
             return
 
-        # self.right_arm.set_position_target([point_msg.x, point_msg.y, point_msg.z])
-        # success, plan, _, _ = self.right_arm.plan()
-        # if success:
-        #     rospy.loginfo("[Right] Planning succeeded, executing...")
-        #     #self.execute_cb_right(plan)
-        # else:
-        #     rospy.logwarn("[Right] Planning failed!")
-        
         target_pose = Pose()
-        target_pose.position.x = point_msg.x
-        target_pose.position.y = point_msg.y
-        target_pose.position.z = point_msg.z
-
-        # qx, qy, qz, qw = quaternion_from_euler(*self.default_euler)
-        # target_pose.orientation.x = qx
-        # target_pose.orientation.y = qy
-        # target_pose.orientation.z = qz
-        # target_pose.orientation.w = qw
-        #自定义朝向
-        target_pose.orientation.x = 0.6583512290228323
-        target_pose.orientation.y = 0.6586083874700932
-        target_pose.orientation.z = -0.2573860849786028
-        target_pose.orientation.w = 0.2579942915212624
+        target_pose.position = pose_msg.position
+        target_pose.orientation = pose_msg.orientation
 
         waypoints = [target_pose]
         (plan, fraction) = self.right_arm.compute_cartesian_path(
             waypoints,
-            0.01,        # 1cm 步长
-            False        # 禁用跳跃，保持平滑
+            0.01,
+            False
         )
 
         if fraction > 0.95:
             rospy.loginfo("[Right] Cartesian path planned successfully.")
-            #self.execute_cb_right(plan)
+            self.execute_cb_right(plan)
         else:
             rospy.logwarn(f"[Right] Cartesian path only {fraction*100:.1f}% planned!")
     def add_time_parametrization(self, trajectory, velocity=0.2):
@@ -175,22 +149,25 @@ class TrajectoryListener:
         left_traj = JointTrajectory()
         left_traj.joint_names = self.left_joint_names
         left_traj.header = traj.header
-        left_traj.points = traj.points
-        # for pt in traj.points:
-        #     new_pt = JointTrajectoryPoint()
-        #     new_pt.positions = [-p for p in pt.positions]
-        #     new_pt.velocities = [-v for v in pt.velocities] if pt.velocities else []
-        #     new_pt.accelerations = [-a for a in pt.accelerations] if pt.accelerations else []
-        #     new_pt.time_from_start = pt.time_from_start
-        #     left_traj.points.append(new_pt)
+        # left_traj.points = traj.points
+        for pt in traj.points:
+            new_pt = JointTrajectoryPoint()
+            new_pt.positions = [-p for p in pt.positions]
+            new_pt.velocities = [-v for v in pt.velocities] if pt.velocities else []
+            new_pt.accelerations = [-a for a in pt.accelerations] if pt.accelerations else []
+            new_pt.time_from_start = pt.time_from_start
+            left_traj.points.append(new_pt)
         
         #添加时间戳
         self.add_time_parametrization(left_traj, velocity=0.15)
         
         goal = FollowJointTrajectoryGoal(trajectory=left_traj)
         self.left_client.send_goal(goal)
-        if self.left_client.wait_for_result(rospy.Duration(10.0)):
+        if self.left_client.wait_for_result(rospy.Duration(80.0)):
+            send_left_hand([1000, 1000, 1000, 993, 1, 113])
             rospy.loginfo("[Left] Execution completed.")
+            # self.left_done_pub.publish(Bool(data=True))
+            # reset_arms()
         else:
             rospy.logerr("[Left] Execution timed out!")
     def execute_cb_right(self, plan):   
@@ -206,7 +183,7 @@ class TrajectoryListener:
 
         goal = FollowJointTrajectoryGoal(trajectory=right_traj)
         self.right_client.send_goal(goal)
-        if self.right_client.wait_for_result(rospy.Duration(10.0)):
+        if self.right_client.wait_for_result(rospy.Duration(30.0)):
             rospy.loginfo("[Right] Execution completed.")
         else:
             rospy.logerr("[Right] Execution timed out!")

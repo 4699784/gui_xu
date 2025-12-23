@@ -59,6 +59,8 @@ class TorsoReader:
         rospy.logwarn("TorsoReader: FORCING 'stood_up' pose for all reads!")
     def get_pos(self):
         #完全站立
+        data = self.client.send_request(TorsoCmdMsg(cmd='get_pos'))
+        rospy.loginfo(f"TorsoReader raw data: {data}")
         return [-1.2404, 2.0226, -0.704, 0.0]
 
 class HeadReader:
