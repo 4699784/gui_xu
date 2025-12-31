@@ -4,6 +4,13 @@ from sensor_msgs.msg import JointState
 from geometry_msgs.msg import TransformStamped
 from tf2_ros import TransformBroadcaster
 from angles import normalize_angle
+import zmq
+import struct
+
+###############################################
+########torso的调试
+########已完成
+###############################################
 
 # 假设 zmq_client.py 在同级目录
 from zmq_client import ArmCmdMsg, TorsoCmdMsg, HeadCmdMsg, ZMQClient
@@ -29,24 +36,9 @@ class ArmReader:
         return [float(v) for v in data[:6]] if data else [0.0] * 6
 
 
-# class TorsoReader:
-#     """读取腰部 4-DOF：Pitch1, Pitch2, Pitch3, Yaw"""
-#     def __init__(self, port: int = 5600):
-#         self.client = ZMQClient(f"tcp://192.168.8.201:{port}")
-#         self.joint_names = [
-#             "Joint_DownLimb_Pitch_1",
-#             "Joint_DownLimb_Pitch_2",
-#             "Joint_DownLimb_Pitch_3",
-#             "Joint_DownLimb_Yaw_1",
-#         ]
-#         self.client.send_request(TorsoCmdMsg(cmd='init'))
-
-#     def get_pos(self):
-#         data = self.client.send_request(TorsoCmdMsg(cmd='get_pos'))
-#         return [float(v) for v in data[:4]] if data else [0.0] * 4
-
 ##绕开硬件的torso初始位置的校准
 class TorsoReader:
+    #硬性控制
     def __init__(self, port: int = 5600):
         self.client = ZMQClient(f"tcp://192.168.8.201:{port}")
         self.joint_names = [
@@ -59,9 +51,11 @@ class TorsoReader:
         rospy.logwarn("TorsoReader: FORCING 'stood_up' pose for all reads!")
     def get_pos(self):
         #完全站立
-        data = self.client.send_request(TorsoCmdMsg(cmd='get_pos'))
-        rospy.loginfo(f"TorsoReader raw data: {data}")
-        return [-1.2404, 2.0226, -0.704, 0.0]
+        # data = self.client.send_request(TorsoCmdMsg(cmd='get_pos'))
+        # rospy.loginfo(f"TorsoReader raw data: {data}")
+        # return [-1.2404, 2.0226, -0.704, 0.0]
+        #正常站力
+        return [-0.697, 0.647, 0.032, -0.106]
 
 class HeadReader:
     """读取头部 2-DOF：Pitch,  Yaw"""
@@ -90,12 +84,9 @@ class WheelReader:
             "Joint_Wheel_T_LB",
             "Joint_Wheel_M_LB",
         ]
-
     def get_pos(self):
 
         return [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
-
-
 
 # -------------------- ROS 发布器 --------------------
 class FullBodyPublisher:
@@ -146,7 +137,7 @@ class FullBodyPublisher:
 
             self.pub.publish(js)
 
-            # 可选：发布一个 world -> dummy_link 的静态 TF
+            #可选：发布一个 world -> dummy_link 的静态 TF
             t = TransformStamped()
             t.header.stamp = rospy.Time.now()
             t.header.frame_id = "world"

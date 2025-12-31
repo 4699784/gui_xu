@@ -14,7 +14,7 @@ from std_msgs.msg import Bool
 left_arm_done = False
 def right_publish_target_and_reset(x, y, z, ox, oy, oz, ow, wait_duration=10):
     #发布目标位置到 /right/target_position，并在等待一段时间后归零机械臂。
-    pub = rospy.Publisher('/right/target_pose', Point, queue_size=1,latch=True)
+    pub = rospy.Publisher('/right/target_pose', Pose, queue_size=1,latch=True)
 
     pose = Pose()
     pose.position.x = x
@@ -61,6 +61,7 @@ def left_publish_target_and_reset(x, y, z, ox, oy, oz, ow, wait_duration=10):
     # 订阅完成信号
     rospy.Subscriber('/left/arm_done', Bool, left_arm_done_callback)
 
+
 # ========================
 # 主程序：抓取
 # ========================
@@ -79,19 +80,19 @@ if __name__ == '__main__':
         #     ow=0.4988420841478891,
         #     wait_duration=20
         # )
-        #right_test（暂未测试，小心）
-        # right_publish_target_and_reset(
-        #     x=0.17418035221953315,
-        #     y=0.5583811855541566,
-        #     z=0.7702718536349595,
-        #     ox=0.6583512290228323,
-        #     oy=0.6586083874700932,
-        #     oz=-0.2573860849786028,
-        #     ow=0.2579942915212624,
-        #     wait_duration=20
-        # )
-        
-
+        #right_test（已测试，可以）
+        right_publish_target_and_reset(
+            x=0.17418035221953315,
+            y=0.5583811855541566,
+            z=0.7702718536349595,
+            ox=0.6583512290228323,
+            oy=0.6586083874700932,
+            oz=-0.2573860849786028,
+            ow=0.2579942915212624,
+            wait_duration=20
+        )
+        rospy.sleep(20)
+        send_left_hand([1000, 1000, 1000, 1000, 1000, 0])
         #左手抓取姿态
         # left_publish_target_and_reset(
         # x=-0.20921624624911417,
@@ -105,8 +106,8 @@ if __name__ == '__main__':
         # )
        
         #回归零位
-        reset_arms()
-        send_left_hand([1000, 1000, 1000, 1000, 1000, 0])
+        #reset_arms()
+        # send_left_hand([1000, 1000, 1000, 1000, 1000, 0])
 
     except rospy.ROSInterruptException:
         pass
